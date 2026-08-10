@@ -1,0 +1,512 @@
+// Схема БД. Мультитенант с самого начала: companyId есть в каждой
+// пользовательской таблице, и ни один запрос не имеет права его не указать.
+// Изоляция обеспечивается двумя слоями:
+//   1. TenantPrisma в приложении — companyId подставляется принудительно;
+//   2. Row-Level Security в Postgres (см. prisma/rls.sql) — страховка на
+//      случай, если кто-то однажды напишет запрос в обход первого слоя.
+//
+// Деньги — Int в копейках (потолок ~21 млн ₽ на единицу, с запасом).
+// Кэшированные итоги — BigInt: смета на 100 млн ₽ в Int32 не влезает.
+// Количества — Int в тысячных (1,5 м = 1500).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // Теневая база нужна только `prisma migrate dev` в разработке. Заводим её
+  // заранее и отдаём во владение роли приложения — иначе Prisma потребует
+  // выдать роли право CREATEDB, а лишние права остаются навсегда.
+  // На проде используется `prisma migrate deploy`, которому теневая база
+  // не нужна вовсе, поэтому переменную там можно не задавать.
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Тенант и пользователи
+// ─────────────────────────────────────────────────────────────
+
+model Company {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(200)
+  /// Реквизиты для шапки сметы и акта.
+  inn       String?  @db.VarChar(12)
+  phone     String?  @db.VarChar(20)
+  address   String?  @db.VarChar(500)
+  logoPath  String?  @db.VarChar(500)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users       User[]
+  categories  CatalogCategory[]
+  items       CatalogItem[]
+  kits        KitTemplate[]
+  estimates   Estimate[]
+  acts        WorkAct[]
+  chats       TelegramChat[]
+  auditLogs   AuditLog[]
+  counters    DocumentCounter[]
+
+  @@map("companies")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  INSTALLER
+}
+
+model User {
+  id        String  @id @default(uuid()) @db.Uuid
+  companyId String  @db.Uuid
+  /// Глобально уникален: один email — один пользователь одной компании.
+  /// Членство в нескольких компаниях сознательно не поддерживаем — это
+  /// заметно усложняет проверки доступа ради сценария, которого пока нет.
+  email     String  @unique @db.VarChar(254)
+  /// Только argon2id-хеш. Пароль в открытом виде не хранится и не логируется.
+  passwordHash String @db.VarChar(255)
+  fullName  String  @db.VarChar(200)
+  phone     String? @db.VarChar(20)
+  role      Role    @default(INSTALLER)
+  isActive  Boolean @default(true)
+
+  /// Блокировка после серии неудачных входов — защита от перебора пароля.
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
+  lastLoginAt      DateTime?
+
+  /// Telegram-аккаунт монтажника: чтобы подписать отправленный акт именем.
+  telegramUserId String? @unique @db.VarChar(32)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company        Company    @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  sessions       Session[]
+  ownedEstimates Estimate[] @relation("EstimateOwner")
+  assignedActs   WorkAct[]  @relation("ActInstaller")
+  auditLogs      AuditLog[]
+
+  @@index([companyId, isActive])
+  @@map("users")
+}
+
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  /// SHA-256 от токена, а не сам токен: утечка дампа БД не должна давать
+  /// возможность войти под чужой сессией.
+  tokenHash String   @unique @db.VarChar(64)
+  expiresAt DateTime
+  /// Для страницы «активные сеансы» и разбора инцидентов.
+  ip        String?  @db.VarChar(45)
+  userAgent String?  @db.VarChar(500)
+  createdAt DateTime @default(now())
+  lastSeenAt DateTime @default(now())
+  revokedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Справочник
+// ─────────────────────────────────────────────────────────────
+
+enum Unit {
+  PCS
+  M
+  SET
+  HOUR
+}
+
+enum ItemKind {
+  EQUIPMENT
+  MATERIAL
+  LABOR
+  CABLE
+}
+
+model CatalogCategory {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @db.Uuid
+  name      String   @db.VarChar(200)
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  company Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  items   CatalogItem[]
+
+  @@unique([companyId, name])
+  @@index([companyId, sortOrder])
+  @@map("catalog_categories")
+}
+
+/// Позиция справочника.
+///
+/// Две цены на одной записи — ключевое решение. У кабеля это «цена за метр
+/// (материал)» и «цена за метр (прокладка)» из ТЗ; у камеры — стоимость
+/// железа и, при желании, стоимость монтажа. Кабель перестаёт быть особым
+/// случаем в коде, а разбивка «Материалы / Работы» в итогах становится
+/// точной, а не прикидочной.
+model CatalogItem {
+  id         String   @id @default(uuid()) @db.Uuid
+  companyId  String   @db.Uuid
+  categoryId String?  @db.Uuid
+  sku        String?  @db.VarChar(64)
+  name       String   @db.VarChar(300)
+  kind       ItemKind
+  unit       Unit
+  /// Идентификатор иконки из CATALOG_ICONS (@yaspectr/core). Выбирает
+  /// пользователь: подбирать значок по названию — значит гадать и не уметь
+  /// объяснить, почему он такой.
+  icon       String?  @db.VarChar(40)
+  /// Копейки за единицу.
+  materialPrice Int @default(0)
+  laborPrice    Int @default(0)
+  /// Закупка. Видна только ADMIN/MANAGER — монтажнику не отдаётся никогда.
+  costPrice     Int?
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  company   Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  category  CatalogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  kitLines  KitLine[]
+  /// Комплекты, где эта позиция — базовая.
+  rootOfKits KitTemplate[]   @relation("KitRootItem")
+
+  @@unique([companyId, sku])
+  @@index([companyId, isActive, kind])
+  @@index([companyId, categoryId])
+  @@map("catalog_items")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Шаблоны комплектов
+// ─────────────────────────────────────────────────────────────
+
+/// «Если монтаж камеры, то сразу юстировка + распред. коробка».
+model KitTemplate {
+  id         String   @id @default(uuid()) @db.Uuid
+  companyId  String   @db.Uuid
+  name       String   @db.VarChar(200)
+  rootItemId String   @db.Uuid
+  /// Комплект, который подставляется автоматически при добавлении позиции.
+  /// На одну базовую позицию такой может быть только один.
+  isDefault  Boolean  @default(false)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  company  Company     @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  rootItem CatalogItem @relation("KitRootItem", fields: [rootItemId], references: [id], onDelete: Cascade)
+  lines    KitLine[]
+
+  @@index([companyId, isActive])
+  @@index([companyId, rootItemId])
+  @@map("kit_templates")
+}
+
+enum QtyMode {
+  /// Количество умножается на количество базовых позиций: 6 камер → 6 юстировок.
+  PER_ROOT
+  /// Фиксированное количество на весь комплект: один телеком-бокс на объект.
+  FIXED
+}
+
+model KitLine {
+  id            String  @id @default(uuid()) @db.Uuid
+  kitTemplateId String  @db.Uuid
+  itemId        String  @db.Uuid
+  qtyMode       QtyMode @default(PER_ROOT)
+  /// Норма на одну базовую позицию, в тысячных. Кабель: 30 м = 30000.
+  qtyPerRoot    Int
+  /// Типовой диапазон для подсказки в интерфейсе (кабель 30–50 м на точку).
+  /// Это подсказка, а не запрет: замер на объекте всегда важнее норматива.
+  minPerRoot    Int?
+  maxPerRoot    Int?
+  isOptional       Boolean @default(false)
+  isDefaultEnabled Boolean @default(true)
+  sortOrder     Int     @default(0)
+
+  kitTemplate KitTemplate @relation(fields: [kitTemplateId], references: [id], onDelete: Cascade)
+  item        CatalogItem @relation(fields: [itemId], references: [id], onDelete: Restrict)
+
+  @@index([kitTemplateId, sortOrder])
+  @@map("kit_lines")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Смета
+// ─────────────────────────────────────────────────────────────
+
+enum EstimateStatus {
+  DRAFT
+  SENT
+  APPROVED
+  REJECTED
+  ARCHIVED
+}
+
+enum EstimateMode {
+  EXPRESS
+  DETAILED
+}
+
+enum VatMode {
+  NONE
+  ADDED
+  INCLUDED
+}
+
+model Estimate {
+  id        String         @id @default(uuid()) @db.Uuid
+  companyId String         @db.Uuid
+  ownerId   String?        @db.Uuid
+  /// Номер документа, уникальный в пределах компании.
+  number    String         @db.VarChar(32)
+  status    EstimateStatus @default(DRAFT)
+  /// Только способ показа: свёрнутый экспресс или развёрнутая смета.
+  /// На расчёт не влияет — итог считает один и тот же код @yaspectr/core.
+  mode      EstimateMode   @default(EXPRESS)
+
+  title       String  @db.VarChar(300)
+  /// Персональные данные клиента. Минимум необходимого — то, без чего
+  /// не выставить документ.
+  clientName  String? @db.VarChar(300)
+  clientPhone String? @db.VarChar(20)
+  siteAddress String? @db.VarChar(500)
+  note        String? @db.Text
+
+  /// Базисные пункты: 10 % = 1000.
+  discountBp Int     @default(0)
+  vatMode    VatMode @default(NONE)
+  vatRateBp  Int     @default(2000)
+
+  /// Денормализованные итоги — чтобы список смет не тянул все строки.
+  /// Пересчитываются движком при каждой записи, руками не правятся.
+  totalMaterials BigInt @default(0)
+  totalLabor     BigInt @default(0)
+  totalDiscount  BigInt @default(0)
+  totalVat       BigInt @default(0)
+  grandTotal     BigInt @default(0)
+
+  /// Момент отправки клиенту. После него смета — обязательство, и
+  /// переоценка по актуальному справочнику запрещена.
+  sentAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  company   Company            @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  owner     User?              @relation("EstimateOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  positions EstimatePosition[]
+  acts      WorkAct[]
+
+  @@unique([companyId, number])
+  @@index([companyId, status, updatedAt])
+  @@index([companyId, ownerId])
+  @@map("estimates")
+}
+
+/// Позиция сметы.
+///
+/// Все цены и наименования здесь — СНИМОК справочника на момент добавления.
+/// Поставщик поднимет цену завтра — уже отправленная клиенту смета не
+/// изменится задним числом. Обновление снимка — только явным действием
+/// пользователя (repricePosition), и только для черновика.
+model EstimatePosition {
+  id            String  @id @default(uuid()) @db.Uuid
+  estimateId    String  @db.Uuid
+  /// Ссылка на справочник — только для «пересчитать по актуальным ценам».
+  /// Расчёт её не использует и работает, даже если позицию удалили.
+  catalogItemId String? @db.Uuid
+  kitTemplateId String? @db.Uuid
+
+  name String   @db.VarChar(300)
+  kind ItemKind
+  /// Снимок иконки — по той же причине, что имя и цены.
+  icon String?  @db.VarChar(40)
+  unit Unit
+  /// Количество базовых позиций в тысячных: 6 камер = 6000.
+  qty  Int
+
+  unitMaterialPrice Int @default(0)
+  unitLaborPrice    Int @default(0)
+
+  isEnabled Boolean @default(true)
+  sortOrder Int     @default(0)
+
+  estimate Estimate       @relation(fields: [estimateId], references: [id], onDelete: Cascade)
+  lines    EstimateLine[]
+
+  @@index([estimateId, sortOrder])
+  @@map("estimate_positions")
+}
+
+model EstimateLine {
+  id            String  @id @default(uuid()) @db.Uuid
+  positionId    String  @db.Uuid
+  catalogItemId String? @db.Uuid
+  /// Из какой строки шаблона выросла. Нужна пересчёту, чтобы понять,
+  /// что обновлять, что добавить, а что осиротело.
+  kitLineId     String? @db.Uuid
+
+  name String   @db.VarChar(300)
+  kind ItemKind
+  unit Unit
+  /// Абсолютное количество, уже умноженное на количество базовых позиций:
+  /// 30 м/камеру × 6 камер = 180 000.
+  qty  Int
+
+  unitMaterialPrice Int @default(0)
+  unitLaborPrice    Int @default(0)
+
+  isEnabled Boolean @default(true)
+  /// Правил руками. Пересчёт по шаблону такую строку не трогает:
+  /// замеренные монтажником 205 м важнее расчётных 180.
+  isManual  Boolean @default(false)
+  note      String? @db.VarChar(1000)
+  sortOrder Int     @default(0)
+
+  position  EstimatePosition @relation(fields: [positionId], references: [id], onDelete: Cascade)
+  actItems  WorkActItem[]
+
+  @@index([positionId, sortOrder])
+  @@map("estimate_lines")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Акт выполненных работ
+// ─────────────────────────────────────────────────────────────
+
+enum ActStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+  SENT
+}
+
+model WorkAct {
+  id         String    @id @default(uuid()) @db.Uuid
+  companyId  String    @db.Uuid
+  estimateId String?   @db.Uuid
+  number     String    @db.VarChar(32)
+  status     ActStatus @default(OPEN)
+
+  siteAddress     String  @db.VarChar(500)
+  clientName      String? @db.VarChar(300)
+  installerUserId String? @db.Uuid
+  /// Имя монтажника текстом: акт должен остаться читаемым, даже если
+  /// сотрудник уволился и его учётку удалили.
+  installerName   String  @db.VarChar(200)
+  workDate        DateTime @db.Date
+
+  sentToChatAt DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  company   Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  estimate  Estimate?     @relation(fields: [estimateId], references: [id], onDelete: SetNull)
+  installer User?         @relation("ActInstaller", fields: [installerUserId], references: [id], onDelete: SetNull)
+  items     WorkActItem[]
+
+  @@unique([companyId, number])
+  @@index([companyId, status, workDate])
+  @@index([companyId, installerUserId])
+  @@map("work_acts")
+}
+
+/// Пункт чек-листа. Две независимые отметки, как в ТЗ: «выполнено»
+/// ставит монтажник, «проверено» — тот, кто принимает работу.
+model WorkActItem {
+  id             String  @id @default(uuid()) @db.Uuid
+  actId          String  @db.Uuid
+  estimateLineId String? @db.Uuid
+
+  name       String @db.VarChar(300)
+  unit       Unit
+  qtyPlanned Int    @default(0)
+  qtyDone    Int    @default(0)
+
+  isDone          Boolean   @default(false)
+  doneAt          DateTime?
+  isChecked       Boolean   @default(false)
+  checkedAt       DateTime?
+  checkedByUserId String?   @db.Uuid
+
+  note      String? @db.VarChar(1000)
+  sortOrder Int     @default(0)
+
+  act          WorkAct       @relation(fields: [actId], references: [id], onDelete: Cascade)
+  estimateLine EstimateLine? @relation(fields: [estimateLineId], references: [id], onDelete: SetNull)
+
+  @@index([actId, sortOrder])
+  @@map("work_act_items")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Интеграции и служебное
+// ─────────────────────────────────────────────────────────────
+
+/// Куда бот отправляет акты. Список закрытый: пользователь выбирает из
+/// заранее привязанных чатов и не может подставить произвольный chatId
+/// в запросе — иначе акт с адресом объекта и именем клиента уедет
+/// куда угодно.
+model TelegramChat {
+  id        String   @id @default(uuid()) @db.Uuid
+  companyId String   @db.Uuid
+  chatId    String   @db.VarChar(32)
+  title     String   @db.VarChar(200)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([companyId, chatId])
+  @@map("telegram_chats")
+}
+
+/// Счётчики номеров документов. Отдельная таблица с блокировкой строки,
+/// а не COUNT(*) + 1: два менеджера, сохраняющие смету одновременно,
+/// иначе получат один и тот же номер.
+model DocumentCounter {
+  companyId String @db.Uuid
+  kind      String @db.VarChar(16)
+  year      Int
+  value     Int    @default(0)
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@id([companyId, kind, year])
+  @@map("document_counters")
+}
+
+/// Журнал изменений. Нужен для двух вещей: разбор «кто поменял цену»
+/// и доказательная база при споре с клиентом о содержимом сметы.
+model AuditLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  companyId   String   @db.Uuid
+  actorUserId String?  @db.Uuid
+  entity      String   @db.VarChar(50)
+  entityId    String   @db.VarChar(64)
+  action      String   @db.VarChar(30)
+  /// Что именно изменилось. Пароли, токены и хеши сюда не попадают.
+  diff        Json?
+  ip          String?  @db.VarChar(45)
+  createdAt   DateTime @default(now())
+
+  company Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  actor   User?   @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, entity, entityId])
+  @@index([companyId, createdAt])
+  @@map("audit_logs")
+}

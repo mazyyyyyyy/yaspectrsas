@@ -1,0 +1,1408 @@
+/*
+ * Дизайн-система, перенесённая один в один из макета SecuCalc.dc.html.
+ * Все размеры, отступы, радиусы и цвета взяты из инлайновых стилей макета
+ * без округлений «на глаз»: 13.5px остаётся 13.5px, 2.5px подчёркивания —
+ * 2.5px. Собрано в классы, чтобы менять в одном месте, а не в трёхстах.
+ */
+
+:root {
+  --bg: #eaede2;
+  --surface: #ffffff;
+  --surface-alt: #fafbf6;
+  --surface-accent: #f1f6e1;
+  --icon-tint: #f2f7e2;
+
+  --border: #e5e8e0;
+  --border-soft: #edefe8;
+  --border-row: #f0f2ec;
+  --border-strong: #dce0d4;
+
+  --text: #2b2e2a;
+  --text-2: #2e312c;
+  --text-3: #4a4e48;
+  --text-muted: #71766e;
+  --text-nav: #666b64;
+  --text-tab: #767b73;
+  --text-faint: #8b908a;
+  --text-dim: #9aa096;
+  --text-price: #5a5f58;
+
+  --accent: #8ab50f;
+  --accent-hover: #77980c;
+  --accent-dark: #4e6b12;
+  --accent-btn-text: #57761a;
+  --accent-icon: #7fa80f;
+  --chevron: #a6aba2;
+
+  --danger: #b4553f;
+
+  --font: 'Golos Text', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  border: 0;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+input,
+select {
+  font-family: inherit;
+  color: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* ── Оболочка: белая карта по центру ─────────────────────── */
+
+.page {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 40px;
+  min-height: 100vh;
+}
+
+.shell {
+  width: 100%;
+  max-width: 1560px;
+  background: var(--surface);
+  border-radius: 22px;
+  box-shadow: 0 24px 60px rgba(46, 49, 42, 0.1), 0 2px 6px rgba(46, 49, 42, 0.06);
+  display: flex;
+  overflow: hidden;
+  min-height: 900px;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  padding: 32px 40px 40px;
+}
+
+/* ── Сайдбар ─────────────────────────────────────────────── */
+
+.sidebar {
+  width: 236px;
+  flex: none;
+  background: var(--surface-alt);
+  border-right: 1px solid var(--border);
+  padding: 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px;
+}
+
+.brand img {
+  width: 34px;
+  height: 34px;
+  display: block;
+  flex: none;
+}
+
+.brand-name {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.brand-sub {
+  font-size: 10.5px;
+  color: var(--text-faint);
+  margin-top: 1px;
+}
+
+.nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--text-nav);
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+}
+
+.nav-item:hover {
+  background: var(--border-row);
+}
+
+.nav-item.active {
+  background: var(--surface-accent);
+  color: var(--accent-dark);
+  font-weight: 600;
+}
+
+.nav-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0 4px;
+}
+
+.sidebar-spacer {
+  flex: 1;
+}
+
+.sync-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.sync-title {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sync-time {
+  font-size: 11px;
+  color: var(--text-faint);
+  margin-top: 1px;
+}
+
+.user-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px;
+  width: 100%;
+  text-align: left;
+}
+
+.avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--accent-icon);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  flex: none;
+}
+
+.user-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.user-role {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+/* ── Заголовок страницы ──────────────────────────────────── */
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+  padding: 4px 8px 4px 4px;
+  border-radius: 8px;
+  margin-left: -4px;
+}
+
+.back-link:hover {
+  background: var(--surface-alt);
+  color: var(--accent-dark);
+}
+
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.page-title {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.page-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 7px;
+}
+
+.head-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-3);
+  background: var(--surface);
+  white-space: nowrap;
+}
+
+/* Подсветка только у настоящих кнопок: этим же классом оформлен индикатор
+   статуса — обычный <div>. Реакция на наведение у нажимаемого и
+   ненажимаемого элемента должна отличаться, иначе по статусу будут кликать. */
+button.head-chip:hover {
+  border-color: #c7d2af;
+}
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+.icon-btn:hover {
+  background: #f4f7ef;
+}
+
+/* Ряд полей формы: на узком экране разворачивается в колонку, иначе
+   три поля по 90px становятся нечитаемыми. */
+.form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+/* Значок в ячейке таблицы справочника. */
+.cell-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--icon-tint);
+  color: var(--accent-icon);
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+/* ── Модальное окно ──────────────────────────────────────── */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(43, 46, 42, 0.42);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+  animation: fade-in 0.14s ease;
+}
+
+.modal {
+  width: 100%;
+  background: var(--surface);
+  border-radius: 18px;
+  box-shadow: 0 32px 80px rgba(46, 49, 42, 0.28), 0 4px 12px rgba(46, 49, 42, 0.1);
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 48px);
+  animation: modal-in 0.16s ease;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 22px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.modal-title {
+  flex: 1;
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.modal-close {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  color: var(--text-muted);
+  flex: none;
+}
+
+.modal-close:hover {
+  background: var(--surface-alt);
+  color: var(--text);
+}
+
+.modal-body {
+  padding: 20px 22px 22px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+/* Анимации отключаются, если система просит уменьшить движение. */
+@media (prefers-reduced-motion: reduce) {
+  .modal-backdrop,
+  .modal {
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .modal-backdrop {
+    padding: 0;
+    align-items: flex-end;
+  }
+
+  .modal {
+    max-height: 92vh;
+    border-radius: 18px 18px 0 0;
+  }
+}
+
+/* ── Выбор иконки ────────────────────────────────────────── */
+
+.icon-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 12px;
+  min-height: 48px;
+  border-radius: 10px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  font-size: 14px;
+}
+
+.icon-field:hover {
+  border-color: #c7d2af;
+}
+
+.icon-field-preview {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--icon-tint);
+  color: var(--accent-icon);
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+
+.icon-grid-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-height: 52vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.icon-group-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tab);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-bottom: 8px;
+}
+
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.icon-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 6px 9px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-3);
+  text-align: center;
+}
+
+.icon-cell:hover {
+  background: var(--surface-alt);
+  border-color: var(--border-strong);
+}
+
+.icon-cell.selected {
+  background: var(--surface-accent);
+  border-color: var(--accent);
+  color: var(--accent-dark);
+}
+
+.icon-cell-label {
+  font-size: 10.5px;
+  line-height: 1.25;
+  color: var(--text-muted);
+  /* Подпись в две строки максимум: иначе ячейки в ряду разной высоты. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.icon-cell.selected .icon-cell-label {
+  color: var(--accent-dark);
+}
+
+/* ── Выпадающее меню ─────────────────────────────────────── */
+
+.menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 20;
+  min-width: 220px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 12px 32px rgba(46, 49, 42, 0.16);
+  overflow: hidden;
+  padding: 4px;
+}
+
+.menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: var(--text-3);
+}
+
+.menu-item:hover:not(:disabled) {
+  background: var(--surface-alt);
+}
+
+.menu-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.menu-item.danger {
+  color: var(--danger);
+}
+
+.menu-item.danger:hover:not(:disabled) {
+  background: #fdf2ef;
+}
+
+/* ── Вкладки ─────────────────────────────────────────────── */
+
+/*
+ * Прокрутки здесь намеренно нет.
+ *
+ * Активная вкладка заходит под границу контейнера на 1,5 px (border 2.5px
+ * при margin-bottom -1px) — так зелёная линия перекрывает серую, как в
+ * макете. Любой overflow, кроме visible, заставляет браузер считать это
+ * переполнением: с `auto` появляется вертикальная полоса, с `hidden`
+ * подчёркивание срезается. На десктопе вкладки помещаются целиком, поэтому
+ * прокрутка включается только на узком экране (см. медиазапрос ниже).
+ */
+.tabs {
+  display: flex;
+  margin-top: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 15px 22px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-tab);
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: var(--accent-dark);
+}
+
+.tab.active {
+  font-weight: 600;
+  color: var(--accent-dark);
+  border-bottom: 2.5px solid var(--accent);
+  margin-bottom: -1px;
+}
+
+/* ── Основная сетка ──────────────────────────────────────── */
+
+.calc-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(272px, 320px);
+  gap: 28px;
+  margin-top: 26px;
+  align-items: start;
+}
+
+.calc-main {
+  min-width: 0;
+}
+
+/* ── Плитки-сводка ───────────────────────────────────────── */
+
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+  gap: 12px;
+}
+
+.tile {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 14px 14px 13px;
+  text-align: center;
+  background: var(--surface);
+}
+
+.tile-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.tile-value {
+  margin-top: 8px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.tile-value span {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-faint);
+}
+
+.tile-price {
+  margin-top: 6px;
+  font-size: 12.5px;
+  color: var(--text-price);
+}
+
+/* ── Список позиций ──────────────────────────────────────── */
+
+.section-head {
+  display: flex;
+  align-items: center;
+  margin-top: 30px;
+}
+
+.section-title {
+  flex: 1;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.btn-outline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--accent-btn-text);
+  background: var(--surface);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: #f5f9e6;
+  border-color: #c7d2af;
+}
+
+.btn-outline:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.positions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.position {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.position-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+  width: 100%;
+  text-align: left;
+}
+
+.position-head:hover {
+  background: var(--surface-alt);
+}
+
+.position-num {
+  width: 16px;
+  font-size: 13px;
+  color: var(--text-dim);
+  font-weight: 500;
+  flex: none;
+}
+
+.position-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  background: var(--icon-tint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  color: var(--accent-icon);
+}
+
+.position-name {
+  font-size: 14.5px;
+  font-weight: 600;
+}
+
+.position-sub {
+  font-size: 12px;
+  color: var(--text-faint);
+  margin-top: 3px;
+}
+
+.position-total {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+}
+
+.position-body {
+  padding: 0 18px 18px;
+}
+
+.lines {
+  background: var(--surface-alt);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.lines-head,
+.lines-row {
+  display: grid;
+  grid-template-columns: 1.7fr 0.9fr 0.9fr 0.9fr 0.9fr;
+  gap: 12px;
+}
+
+.lines-head {
+  padding: 13px 18px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tab);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.lines-row {
+  padding: 12px 18px;
+  font-size: 13px;
+  align-items: center;
+  border-bottom: 1px solid var(--border-row);
+}
+
+.lines-row:last-child {
+  border-bottom: 0;
+}
+
+.lines-row .name {
+  color: var(--text-2);
+}
+
+.lines-row .type {
+  color: var(--text-muted);
+}
+
+.lines-row .right {
+  text-align: right;
+  color: var(--text-2);
+}
+
+.lines-row .sum {
+  text-align: right;
+  color: var(--text-2);
+  font-weight: 500;
+}
+
+.line-off {
+  opacity: 0.45;
+}
+
+.cell-input {
+  width: 100%;
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  text-align: right;
+}
+
+.cell-input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.select-sm {
+  font-size: 12.5px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-2);
+  cursor: pointer;
+}
+
+/* ── Обычные таблицы: справочник, комплекты ──────────────── */
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table th {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-tab);
+  text-align: left;
+  padding: 13px 18px;
+  border-bottom: 1px solid var(--border-soft);
+  white-space: nowrap;
+}
+
+.data-table td {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border-row);
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+.data-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.data-table .right {
+  text-align: right;
+  white-space: nowrap;
+}
+
+/* Широкая таблица прокручивается внутри своего контейнера, а не распирает
+   страницу горизонтально. */
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+/* ── Панель итогов ───────────────────────────────────────── */
+
+.totals {
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 22px;
+  background: var(--surface);
+  position: sticky;
+  top: 24px;
+}
+
+.totals-title {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.totals-row {
+  display: flex;
+  align-items: center;
+  font-size: 13.5px;
+}
+
+.totals-row .label {
+  flex: 1;
+  color: var(--text-muted);
+}
+
+.totals-row .value {
+  font-weight: 500;
+}
+
+.totals-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 20px 0;
+}
+
+.totals-label {
+  font-size: 13.5px;
+  color: var(--text-muted);
+}
+
+.totals-grand {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--accent-dark);
+  letter-spacing: -0.025em;
+  margin-top: 8px;
+}
+
+.totals-note {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 8px;
+}
+
+.totals-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 22px;
+}
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 15px;
+  border-radius: 12px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 14.5px;
+  font-weight: 600;
+  box-shadow: 0 6px 14px rgba(138, 181, 15, 0.3);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.btn-secondary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-3);
+  background: var(--surface);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #f6f9ef;
+  border-color: #c7d2af;
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Чек-лист акта ───────────────────────────────────────── */
+
+.check-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.check-row:last-child {
+  border-bottom: 0;
+}
+
+.check {
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  border: 2px solid var(--border-strong);
+  background: var(--surface);
+  display: grid;
+  place-items: center;
+  flex: none;
+  color: #fff;
+}
+
+.check[data-on='true'] {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.check-done .check-label {
+  color: var(--text-faint);
+  text-decoration: line-through;
+}
+
+/* ── Формы, состояния ────────────────────────────────────── */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-label {
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.input {
+  padding: 11px 13px;
+  border-radius: 10px;
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  width: 100%;
+  font-size: 14px;
+}
+
+.input:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.input-num {
+  text-align: right;
+}
+
+.alert {
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #fdf2ef;
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.notice {
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #c7d2af;
+  background: var(--surface-accent);
+  font-size: 13px;
+}
+
+.card {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  padding: 18px;
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+.faint {
+  color: var(--text-faint);
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--surface-accent);
+  color: var(--accent-dark);
+}
+
+.badge-muted {
+  background: var(--surface-alt);
+  color: var(--text-muted);
+}
+
+/* Скрытая на десктопе шапка телефона */
+.mobile-bar,
+.mobile-actions,
+.drawer-backdrop {
+  display: none;
+}
+
+/* ── Телефон и планшет ───────────────────────────────────── */
+
+@media (max-width: 1100px) {
+  .calc-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .totals {
+    position: static;
+  }
+}
+
+@media (max-width: 860px) {
+  /* Мобильный макет отдельный: шапка с гамбургером, контент, нижняя
+     панель действий — как в SecuCalc Мобильный.dc.html. Сайдбар
+     превращается в выдвижную панель. */
+  .page {
+    padding: 0;
+    display: block;
+  }
+
+  .shell {
+    max-width: none;
+    min-height: 100vh;
+    border-radius: 0;
+    box-shadow: none;
+    display: block;
+    background: #f5f6f1;
+  }
+
+  .main {
+    padding: 0 14px 20px;
+  }
+
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 30;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    box-shadow: 0 0 40px rgba(46, 49, 42, 0.18);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  .drawer-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: rgba(43, 46, 42, 0.35);
+  }
+
+  .mobile-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 14px 12px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  .mobile-bar .title {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 16px;
+    font-weight: 600;
+  }
+
+  .mobile-bar img {
+    width: 20px;
+    height: 20px;
+  }
+
+  .page-head {
+    display: none;
+  }
+
+  .tabs {
+    margin-top: 0;
+    background: var(--surface);
+    margin-inline: -14px;
+    padding-inline: 14px;
+    /* На телефоне три вкладки не помещаются — листаем пальцем. Полосу
+       прокрутки прячем, вертикальную гасим: срезанные полтора пикселя
+       подчёркивания здесь не видны, а лишняя полоса — видна. */
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab {
+    padding: 13px 14px;
+    font-size: 13px;
+  }
+
+  .calc-grid {
+    margin-top: 14px;
+    gap: 14px;
+  }
+
+  .tiles {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .tile {
+    text-align: left;
+  }
+
+  .tile-label {
+    justify-content: flex-start;
+  }
+
+  .section-head {
+    margin-top: 18px;
+  }
+
+  .section-title {
+    font-size: 16px;
+  }
+
+  .position-head {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .position-body {
+    padding: 0 12px 12px;
+  }
+
+  /* Пятиколоночная сетка на телефон не влезает: показываем наименование,
+     количество и сумму — как в мобильном макете. Скрывать нужно ОБЕ лишние
+     ячейки: в CSS-сетке лишний элемент не исчезает, а переносится на
+     следующий ряд, и строка разваливается на две. */
+  .lines-head {
+    display: none;
+  }
+
+  .lines-row {
+    grid-template-columns: 1fr auto auto;
+    gap: 10px;
+    padding: 9px 10px;
+    font-size: 11.5px;
+  }
+
+  .lines-row .type,
+  .lines-row .price {
+    display: none;
+  }
+
+  .lines-row .qty {
+    min-width: 46px;
+    text-align: right;
+    color: var(--text-faint);
+  }
+
+  .lines-row .sum {
+    min-width: 58px;
+  }
+
+  /*
+   * Нижняя панель действий из мобильного макета.
+   *
+   * fixed, а не sticky: панель — последний элемент своего контейнера,
+   * прилипать ей некуда, и со sticky она просто уезжала в конец списка.
+   * Прижимаем к низу экрана, а место под неё резервируем отступом у
+   * содержимого — иначе панель накроет итоги.
+   */
+  .mobile-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    padding: 10px 4px calc(10px + env(safe-area-inset-bottom));
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 15;
+    box-shadow: 0 -2px 12px rgba(46, 49, 42, 0.06);
+  }
+
+  .calc-grid {
+    padding-bottom: calc(80px + env(safe-area-inset-bottom));
+  }
+
+  .mobile-actions button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 0;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-3);
+  }
+
+  .mobile-actions svg {
+    color: var(--accent-icon);
+  }
+
+  .totals-actions {
+    display: none;
+  }
+
+  .page-title {
+    font-size: 22px;
+  }
+}
+
+@media print {
+  .sidebar,
+  .mobile-bar,
+  .mobile-actions,
+  .tabs,
+  .no-print {
+    display: none !important;
+  }
+
+  .page {
+    padding: 0;
+  }
+
+  .shell {
+    box-shadow: none;
+    border-radius: 0;
+  }
+}

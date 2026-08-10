@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  body { margin: 0; background: #EAEDE2; font-family: "Golos Text", system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+  a { color: #7FA80F; }
+  a:hover { color: #6C8F0C; }
+  ::-webkit-scrollbar { width: 0; height: 0; }
+</style>
+</helmet>
+<div style="display: flex; align-items: center; justify-content: center; padding: 40px; min-height: 100vh; box-sizing: border-box; color: #2B2E2A;">
+  <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+    <div style="display: flex; flex-direction: column; height: 100%; background: #F5F6F1; font-family: 'Golos Text', system-ui, sans-serif; color: #2B2E2A;">
+
+      <div style="display: flex; align-items: center; gap: 12px; padding: 66px 18px 12px; background: #fff; border-bottom: 1px solid #E5E8E0; flex: none;">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4A4E48" stroke-width="1.9" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"></path></svg>
+        <div style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;">
+          <img src="./logo.png" alt="Яспектр" style="width: 20px; height: 20px; display: block;" />
+          <div style="font-size: 16px; font-weight: 600;">Экспресс-расчёт</div>
+        </div>
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="#767B73"><circle cx="12" cy="5" r="1.7"></circle><circle cx="12" cy="12" r="1.7"></circle><circle cx="12" cy="19" r="1.7"></circle></svg>
+      </div>
+
+      <div style="flex: 1; overflow-y: auto; scrollbar-width: none; padding: 14px 14px 20px; display: flex; flex-direction: column; gap: 12px;">
+        <div style="font-size: 12.5px; color: #71766E;">Объект: Офис на Ленина, 12&nbsp;&nbsp;•&nbsp;&nbsp;ООО «Альфа»</div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+          <div style="border: 1px solid #E5E8E0; border-radius: 14px; background: #fff; padding: 12px;">
+            <div style="display: flex; align-items: center; gap: 7px; font-size: 12px; color: #71766E; font-weight: 500;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7FA80F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5l14-4.5 2 5.5-14 4.5z"></path><circle cx="10" cy="10" r="2"></circle><path d="M8 15v4h8"></path></svg>
+              Камеры
+            </div>
+            <div style="margin-top: 6px; font-size: 20px; font-weight: 700;">6 <span style="font-size: 11px; font-weight: 500; color: #8B908A;">шт.</span></div>
+            <div style="margin-top: 4px; font-size: 12px; color: #5A5F58;">120 600 ₽</div>
+          </div>
+          <div style="border: 1px solid #E5E8E0; border-radius: 14px; background: #fff; padding: 12px;">
+            <div style="display: flex; align-items: center; gap: 7px; font-size: 12px; color: #71766E; font-weight: 500;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7FA80F" stroke-width="1.9" stroke-linecap="round"><path d="M4 9.5a12 12 0 0 1 16 0"></path><path d="M7 13a8 8 0 0 1 10 0"></path><circle cx="12" cy="17.5" r="1.4" fill="#7FA80F" stroke="none"></circle></svg>
+              Wi-Fi
+            </div>
+            <div style="margin-top: 6px; font-size: 20px; font-weight: 700;">2 <span style="font-size: 11px; font-weight: 500; color: #8B908A;">шт.</span></div>
+            <div style="margin-top: 4px; font-size: 12px; color: #5A5F58;">22 000 ₽</div>
+          </div>
+          <div style="border: 1px solid #E5E8E0; border-radius: 14px; background: #fff; padding: 12px;">
+            <div style="display: flex; align-items: center; gap: 7px; font-size: 12px; color: #71766E; font-weight: 500;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7FA80F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2"></rect><circle cx="12" cy="8" r="1.6"></circle><path d="M10 13h4M10 16.5h4"></path></svg>
+              Домофон
+            </div>
+            <div style="margin-top: 6px; font-size: 20px; font-weight: 700;">1 <span style="font-size: 11px; font-weight: 500; color: #8B908A;">шт.</span></div>
+            <div style="margin-top: 4px; font-size: 12px; color: #5A5F58;">18 500 ₽</div>
+          </div>
+          <div style="border: 1px solid #E5E8E0; border-radius: 14px; background: #fff; padding: 12px;">
+            <div style="display: flex; align-items: center; gap: 7px; font-size: 12px; color: #71766E; font-weight: 500;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7FA80F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8" width="19" height="8" rx="2"></rect><path d="M6 12h1M9.5 12h1"></path><circle cx="18" cy="12" r="1"></circle></svg>
+              Регистратор
+            </div>
+            <div style="margin-top: 6px; font-size: 20px; font-weight: 700;">1 <span style="font-size: 11px; font-weight: 500; color: #8B908A;">шт.</span></div>
+            <div style="margin-top: 4px; font-size: 12px; color: #5A5F58;">28 900 ₽</div>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; margin-top: 4px;">
+          <div style="flex: 1; font-size: 16px; font-weight: 700;">Позиции</div>
+          <div style="width: 32px; height: 32px; border-radius: 10px; border: 1px solid #DCE0D4; background: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8AB50F" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <sc-for list="{{ positions }}" as="p" hint-placeholder-count="4">
+            <div style="border: 1px solid #E5E8E0; border-radius: 12px; background: #fff; overflow: hidden;">
+              <div onClick="{{ p.toggle }}" style="display: flex; align-items: center; gap: 10px; padding: 12px; cursor: pointer;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#A6ABA2" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" style="transform: rotate({{ p.rot }}deg); transition: transform .18s; flex: none;"><path d="M9 6l6 6-6 6"></path></svg>
+                <div style="width: 22px; height: 22px; border-radius: 7px; background: #F2F7E2; display: flex; align-items: center; justify-content: center; flex: none;">
+                  <sc-if value="{{ p.isCam }}" hint-placeholder-val="{{ true }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7FA80F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5l14-4.5 2 5.5-14 4.5z"></path><circle cx="10" cy="10" r="2"></circle><path d="M8 15v4h8"></path></svg></sc-if>
+                  <sc-if value="{{ p.isWifi }}" hint-placeholder-val="{{ false }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7FA80F" stroke-width="2" stroke-linecap="round"><path d="M4 9.5a12 12 0 0 1 16 0"></path><path d="M7 13a8 8 0 0 1 10 0"></path><circle cx="12" cy="17.5" r="1.4" fill="#7FA80F" stroke="none"></circle></svg></sc-if>
+                  <sc-if value="{{ p.isDoor }}" hint-placeholder-val="{{ false }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7FA80F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2"></rect><circle cx="12" cy="8" r="1.6"></circle><path d="M10 13h4M10 16.5h4"></path></svg></sc-if>
+                  <sc-if value="{{ p.isNvr }}" hint-placeholder-val="{{ false }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7FA80F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="8" width="19" height="8" rx="2"></rect><path d="M6 12h1M9.5 12h1"></path><circle cx="18" cy="12" r="1"></circle></svg></sc-if>
+                </div>
+                <div style="flex: 1; min-width: 0;">
+                  <div style="font-size: 13px; font-weight: 600;">{{ p.name }}</div>
+                  <div style="font-size: 11px; color: #8B908A; margin-top: 2px;">{{ p.sub }}</div>
+                </div>
+                <div style="font-size: 13px; font-weight: 600; white-space: nowrap;">{{ p.total }}</div>
+              </div>
+              <sc-if value="{{ p.open }}" hint-placeholder-val="{{ true }}">
+                <div style="padding: 0 12px 12px;">
+                  <div style="background: #FAFBF6; border: 1px solid #EDEFE8; border-radius: 10px; padding: 2px 10px;">
+                    <sc-for list="{{ p.rows }}" as="r" hint-placeholder-count="5">
+                      <div style="display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 9px 0; font-size: 11.5px; border-bottom: 1px solid #F0F2EC;">
+                        <div style="color: #2E312C;">{{ r.name }}</div>
+                        <div style="color: #8B908A; min-width: 46px; text-align: right; white-space: nowrap;">{{ r.qty }}</div>
+                        <div style="color: #2E312C; font-weight: 500; min-width: 58px; text-align: right; white-space: nowrap;">{{ r.sum }}</div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="border: 1px solid #E5E8E0; border-radius: 14px; background: #fff; padding: 14px; margin-top: 4px;">
+          <div style="display: flex; align-items: center; font-size: 12.5px;">
+            <div style="flex: 1; color: #71766E;">Материалы</div>
+            <div style="font-weight: 500;">88 400 ₽</div>
+          </div>
+          <div style="display: flex; align-items: center; margin-top: 10px; font-size: 12.5px;">
+            <div style="flex: 1; color: #71766E;">Работы</div>
+            <div style="font-weight: 500;">101 600 ₽</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px; margin-top: 12px; font-size: 12.5px;">
+            <div style="flex: 1; color: #71766E;">Скидка</div>
+            <select value="{{ discount }}" onChange="{{ onDiscount }}" style="font-family: inherit; font-size: 12.5px; padding: 6px 8px; border-radius: 9px; border: 1px solid #DCE0D4; background: #fff; color: #2E312C;">
+              <option value="0">0 %</option>
+              <option value="5">5 %</option>
+              <option value="10">10 %</option>
+              <option value="15">15 %</option>
+            </select>
+            <div style="color: #B4553F; font-weight: 500; white-space: nowrap;">{{ discountSum }}</div>
+          </div>
+          <div style="height: 1px; background: #E5E8E0; margin: 14px 0;"></div>
+          <div style="font-size: 12.5px; color: #71766E;">Предварительный итог</div>
+          <div style="margin-top: 6px; font-size: 28px; font-weight: 700; color: #4E6B12; letter-spacing: -0.02em;">{{ finalSum }}</div>
+          <div style="margin-top: 6px; font-size: 11.5px; color: #9AA096;">Предварительно, детально — после выезда</div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1px solid #E5E8E0; background: #fff; padding: 10px 4px 26px; flex: none;">
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 6px 0; cursor: pointer;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7FA80F" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v15H5z"></path><path d="M8 3v6h7M8 14h8v7H8z"></path></svg>
+          <div style="font-size: 11px; color: #4A4E48; font-weight: 500;">Сохранить</div>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 6px 0; cursor: pointer;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7FA80F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5z"></path><path d="M9 16h6"></path></svg>
+          <div style="font-size: 11px; color: #4A4E48; font-weight: 500;">PDF</div>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 6px 0; cursor: pointer;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7FA80F" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 3L10.5 13.5"></path><path d="M21 3l-6.5 18-4-8-8-4L21 3z"></path></svg>
+          <div style="font-size: 11px; color: #4A4E48; font-weight: 500;">Клиенту</div>
+        </div>
+      </div>
+    </div>
+  </x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;: {&quot;width&quot;: 520, &quot;height&quot;: 980}}">
+const DATA = [
+  { key: 'cam', name: 'IP камера 4 Мр', sub: '6 шт. × 20 100 ₽', total: '120 600 ₽', rows: [
+    { name: 'Монтаж', qty: '6 шт.', sum: '9 000 ₽' },
+    { name: 'Юстировка', qty: '6 шт.', sum: '2 400 ₽' },
+    { name: 'Распред. коробка', qty: '6 шт.', sum: '720 ₽' },
+    { name: 'Кабель UTP (материал)', len: 'cam', per: 45 },
+    { name: 'Прокладка кабеля', len: 'cam', per: 35 },
+  ]},
+  { key: 'wifi', name: 'Wi-Fi точка AX1800', sub: '2 шт. × 11 000 ₽', total: '22 000 ₽', rows: [
+    { name: 'Монтаж', qty: '2 шт.', sum: '2 400 ₽' },
+    { name: 'Настройка и подключение', qty: '2 шт.', sum: '1 600 ₽' },
+    { name: 'Кронштейн', qty: '2 шт.', sum: '700 ₽' },
+    { name: 'Кабель UTP (материал)', len: 'wifi', per: 45 },
+    { name: 'Прокладка кабеля', len: 'wifi', per: 35 },
+  ]},
+  { key: 'door', name: 'Домофон Vizit', sub: '1 шт. × 18 500 ₽', total: '18 500 ₽', rows: [
+    { name: 'Монтаж вызывной панели', qty: '1 шт.', sum: '2 500 ₽' },
+    { name: 'Монтаж блока управления', qty: '1 шт.', sum: '1 800 ₽' },
+    { name: 'Блок питания', qty: '1 шт.', sum: '1 450 ₽' },
+    { name: 'Кабель КСПВ (материал)', len: 'door', per: 28 },
+    { name: 'Прокладка кабеля', len: 'door', per: 35 },
+  ]},
+  { key: 'nvr', name: 'Сетевой регистратор 8 каналов', sub: '1 шт. × 28 900 ₽', total: '28 900 ₽', rows: [
+    { name: 'Монтаж и настройка', qty: '1 шт.', sum: '3 500 ₽' },
+    { name: 'Телеком. бокс', qty: '1 шт.', sum: '2 400 ₽' },
+    { name: 'Патч-корд 1 м', qty: '4 шт.', sum: '760 ₽' },
+    { name: 'Пусконаладка системы', qty: '1 шт.', sum: '2 000 ₽' },
+  ]},
+];
+
+const CABLE = { cam: 180, wifi: 60, door: 40 };
+const TOTAL = 190000;
+
+class Component extends DCLogic {
+  state = { open: { cam: true }, discount: 10 };
+
+  fmt(n) { return n.toLocaleString('ru-RU').replace(/,/g, ' ') + ' ₽'; }
+
+  renderVals() {
+    const { open, discount } = this.state;
+    const positions = DATA.map((p, i) => ({
+      n: i + 1, name: p.name, sub: p.sub, total: p.total,
+      open: !!open[p.key], rot: open[p.key] ? 90 : 0,
+      isCam: p.key === 'cam', isWifi: p.key === 'wifi', isDoor: p.key === 'door', isNvr: p.key === 'nvr',
+      toggle: () => this.setState(s => ({ open: Object.assign({}, s.open, { [p.key]: !s.open[p.key] }) })),
+      rows: p.rows.map(r => ({
+        name: r.name,
+        qty: r.len ? CABLE[r.len] + ' м' : r.qty,
+        sum: r.per ? this.fmt(r.per * CABLE[r.len]) : r.sum,
+      })),
+    }));
+    const cut = Math.round(TOTAL * discount / 100);
+    return {
+      positions,
+      discount: String(discount),
+      discountSum: discount ? '−' + this.fmt(cut) : '0 ₽',
+      finalSum: this.fmt(TOTAL - cut),
+      onDiscount: e => this.setState({ discount: +e.target.value }),
+    };
+  }
+}
+</script>
+</body>
+</html>

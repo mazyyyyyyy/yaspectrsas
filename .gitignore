@@ -1,0 +1,21 @@
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# секреты — никогда в git
+.env
+.env.*
+!.env.example
+
+# локальные данные
+*.log
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# загрузки/вложения
+uploads/
+!uploads/.gitkeep
