@@ -82,6 +82,42 @@ export function useKits() {
   return useQuery({ queryKey: keys.kits, queryFn: () => api.get<KitTemplate[]>('/kits') });
 }
 
+/** Строка комплекта в том виде, в каком её принимает сервер. */
+export interface KitLinePayload {
+  itemId: string;
+  qtyMode: 'PER_ROOT' | 'FIXED';
+  qtyPerRoot: number;
+  minPerRoot?: number | null;
+  maxPerRoot?: number | null;
+  isOptional?: boolean;
+  sortOrder?: number;
+}
+
+export interface KitSavePayload {
+  id?: string;
+  name: string;
+  rootItemId: string;
+  isDefault: boolean;
+  lines: KitLinePayload[];
+}
+
+export function useSaveKit() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, ...body }: KitSavePayload) =>
+      id ? api.patch<KitTemplate>(`/kits/${id}`, body) : api.post<KitTemplate>('/kits', body),
+    onSuccess: () => client.invalidateQueries({ queryKey: keys.kits }),
+  });
+}
+
+export function useArchiveKit() {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.delete<KitTemplate>(`/kits/${id}`),
+    onSuccess: () => client.invalidateQueries({ queryKey: keys.kits }),
+  });
+}
+
 // ─────────────────────────────────────────────────────────────
 // Сметы
 // ─────────────────────────────────────────────────────────────
