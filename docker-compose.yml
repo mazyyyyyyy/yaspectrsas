@@ -1,0 +1,64 @@
+# ─────────────────────────────────────────────────────────────
+# Яспектр — деплой для Synology DSM / Container Manager.
+#
+#   • db   — PostgreSQL (том сохраняется между перезапусками);
+#   • api  — NestJS: миграции + RLS + сидинг при старте, затем сервер;
+#   • web  — nginx: отдаёт PWA и проксирует /api в api.
+#
+# Наружу торчит только web, на порт 8324. API и БД видны лишь внутри
+# сети проекта.  Перед первым запуском: cp .env.docker.example .env
+# ─────────────────────────────────────────────────────────────
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # HTTP в локальной сети → режим development (в production схема требует
+      # HTTPS и Secure-cookie; см. «Публикация в интернет» в DEPLOY.md).
+      NODE_ENV: development
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}?schema=public
+      API_PORT: "3000"
+      # Один источник (nginx проксирует /api), кросс-доменных запросов нет.
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8324}
+      SESSION_SECRET: ${SESSION_SECRET}
+      SESSION_TTL_MINUTES: ${SESSION_TTL_MINUTES:-720}
+      COOKIE_SECURE: "false"
+      CHROMIUM_PATH: /usr/bin/chromium
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
+    expose:
+      - "3000"
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "8324:80"
+
+volumes:
+  pgdata:

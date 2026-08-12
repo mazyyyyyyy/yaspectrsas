@@ -1,0 +1,26 @@
+# Не тащим в контекст сборки то, что должно собираться внутри образа
+node_modules
+**/node_modules
+dist
+**/dist
+build
+**/build
+coverage
+**/coverage
+*.tsbuildinfo
+
+# секреты и локальное
+.env
+.env.*
+!.env.docker.example
+.git
+.gitignore
+*.log
+.DS_Store
+.vscode
+.idea
+
+# дизайн-исходники, не нужны в рантайме
+*.dc.html
+ios-frame.jsx
+.thumbnail
