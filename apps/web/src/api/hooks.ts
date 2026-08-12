@@ -321,11 +321,23 @@ export function useUpdateUser() {
     }: {
       id: string;
       fullName?: string;
+      email?: string;
       phone?: string | null;
       role?: Role;
       isActive?: boolean;
     }) => api.patch<CompanyUser>(`/users/${id}`, patch),
     onSuccess: () => client.invalidateQueries({ queryKey: keys.users }),
+  });
+}
+
+/**
+ * Смена собственного пароля. Требует текущий пароль. Сервер закрывает все
+ * сессии пользователя, включая текущую, — после успеха нужно войти заново.
+ */
+export function useChangeOwnPassword() {
+  return useMutation({
+    mutationFn: (body: { currentPassword: string; newPassword: string }) =>
+      api.post<void>('/auth/change-password', body),
   });
 }
 

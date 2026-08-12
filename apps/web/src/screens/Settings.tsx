@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { ROLES, ROLE_LABELS } from '@yaspectr/core';
 import type { Role } from '@yaspectr/core';
 import {
+  useChangeOwnPassword,
   useCreateUser,
   useResetUserPassword,
   useUpdateUser,
@@ -19,6 +20,13 @@ export function SettingsScreen() {
 
   const [creating, setCreating] = useState(false);
   const [resetting, setResetting] = useState<CompanyUser | null>(null);
+  const [editing, setEditing] = useState<CompanyUser | null>(null);
+  const [editingSelf, setEditingSelf] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  // Себя для правки профиля берём из списка (там есть телефон). Список виден
+  // только с user:read, но правка профиля и так требует user:write.
+  const selfMember = users?.find((u) => u.id === user?.id) ?? null;
 
   return (
     <>
@@ -46,16 +54,31 @@ export function SettingsScreen() {
               <span className="value">{user?.fullName}</span>
             </div>
             <div className="totals-row" style={{ marginBottom: 10 }}>
-              <span className="label">Email</span>
+              <span className="label">Email (логин)</span>
               <span className="value">{user?.email}</span>
             </div>
             <div className="totals-row" style={{ marginBottom: 16 }}>
               <span className="label">Роль</span>
               <span className="value">{user ? ROLE_LABELS[user.role] : ''}</span>
             </div>
-            <button type="button" className="btn-outline" onClick={() => void logout()}>
-              Выйти
-            </button>
+            <div className="row" style={{ flexWrap: 'wrap' }}>
+              {canManageUsers && selfMember && (
+                <button type="button" className="btn-outline" onClick={() => setEditingSelf(true)}>
+                  Изменить данные
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn-outline"
+                onClick={() => setChangingPassword(true)}
+              >
+                Сменить пароль
+              </button>
+              <div className="grow" />
+              <button type="button" className="head-chip" onClick={() => void logout()}>
+                Выйти
+              </button>
+            </div>
           </div>
 
           {can('user:read') && (
@@ -76,7 +99,7 @@ export function SettingsScreen() {
                   member={member}
                   isSelf={member.id === user?.id}
                   canManage={canManageUsers}
-                  onReset={() => setResetting(member)}
+                  onEdit={() => setEditing(member)}
                 />
               ))}
 
@@ -100,9 +123,21 @@ export function SettingsScreen() {
       </div>
 
       {creating && <CreateUserModal onClose={() => setCreating(false)} />}
-      {resetting && (
-        <ResetPasswordModal member={resetting} onClose={() => setResetting(null)} />
+      {resetting && <ResetPasswordModal member={resetting} onClose={() => setResetting(null)} />}
+      {editing && (
+        <EditUserModal
+          member={editing}
+          onClose={() => setEditing(null)}
+          onReset={() => {
+            setResetting(editing);
+            setEditing(null);
+          }}
+        />
       )}
+      {editingSelf && selfMember && (
+        <EditSelfModal member={selfMember} onClose={() => setEditingSelf(false)} />
+      )}
+      {changingPassword && <ChangeOwnPasswordModal onClose={() => setChangingPassword(false)} />}
     </>
   );
 }
@@ -111,15 +146,13 @@ function UserRow({
   member,
   isSelf,
   canManage,
-  onReset,
+  onEdit,
 }: {
   member: CompanyUser;
   isSelf: boolean;
   canManage: boolean;
-  onReset: () => void;
+  onEdit: () => void;
 }) {
-  const update = useUpdateUser();
-
   return (
     <div
       className="row"
@@ -136,58 +169,19 @@ function UserRow({
         </div>
         <div className="faint" style={{ fontSize: 12, marginTop: 2 }}>
           {member.email}
+          {member.phone ? ` · ${member.phone}` : ''}
           {!member.isActive && ' · отключён'}
         </div>
       </div>
 
-      {canManage && !isSelf ? (
-        <>
-          {/* Роль меняется прямо в списке: это самое частое действие, ради
-              него не стоит открывать отдельное окно. */}
-          <select
-            className="select-sm"
-            value={member.role}
-            disabled={update.isPending}
-            onChange={(e) => void update.mutateAsync({ id: member.id, role: e.target.value as Role })}
-          >
-            {ROLES.map((role) => (
-              <option key={role} value={role}>
-                {ROLE_LABELS[role]}
-              </option>
-            ))}
-          </select>
+      <span className={`badge${member.isActive ? '' : ' badge-muted'}`}>
+        {ROLE_LABELS[member.role]}
+      </span>
 
-          <button type="button" className="btn-outline" onClick={onReset}>
-            Сбросить пароль
-          </button>
-
-          <button
-            type="button"
-            className="btn-outline"
-            style={member.isActive ? { color: 'var(--danger)' } : undefined}
-            disabled={update.isPending}
-            title={
-              member.isActive
-                ? 'Сотрудник потеряет доступ немедленно, все его сеансы закроются'
-                : 'Вернуть доступ'
-            }
-            onClick={() =>
-              void update.mutateAsync({ id: member.id, isActive: !member.isActive })
-            }
-          >
-            {member.isActive ? 'Отключить' : 'Включить'}
-          </button>
-        </>
-      ) : (
-        <span className={`badge${member.isActive ? '' : ' badge-muted'}`}>
-          {ROLE_LABELS[member.role]}
-        </span>
-      )}
-
-      {update.error && (
-        <div className="alert" style={{ width: '100%' }}>
-          {update.error instanceof Error ? update.error.message : 'Не удалось изменить'}
-        </div>
+      {canManage && !isSelf && (
+        <button type="button" className="btn-outline" onClick={onEdit}>
+          Изменить
+        </button>
       )}
     </div>
   );
@@ -205,6 +199,12 @@ function generatePassword(length = 16): string {
   const alphabet = 'abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   const bytes = crypto.getRandomValues(new Uint32Array(length));
   return Array.from(bytes, (b) => alphabet[b % alphabet.length]).join('');
+}
+
+function fieldErrorOf(error: unknown, name: string): string | undefined {
+  return error && typeof error === 'object' && 'fields' in error
+    ? (error as { fields?: Record<string, string> }).fields?.[name]
+    : undefined;
 }
 
 function CreateUserModal({ onClose }: { onClose: () => void }) {
@@ -232,10 +232,7 @@ function CreateUserModal({ onClose }: { onClose: () => void }) {
     setCreated({ email: form.email.trim(), password: form.password });
   }
 
-  const fieldError = (name: string) =>
-    create.error && 'fields' in create.error
-      ? (create.error as { fields?: Record<string, string> }).fields?.[name]
-      : undefined;
+  const fieldError = (name: string) => fieldErrorOf(create.error, name);
 
   if (created) {
     return (
@@ -365,6 +362,260 @@ const ROLE_HINTS: Record<Role, string> = {
   MANAGER: 'Сметы и акты, видит закупочные цены. Справочник и сотрудников не правит.',
   INSTALLER: 'Только свои акты. Смету видит, править не может. Закупочные цены не видит.',
 };
+
+/**
+ * Правка сотрудника администратором: имя, логин, телефон, роль, доступ.
+ * Отправляем только изменённые поля — иначе правка имени последнего
+ * администратора упёрлась бы в проверку «нельзя оставить компанию без админа».
+ */
+function EditUserModal({
+  member,
+  onClose,
+  onReset,
+}: {
+  member: CompanyUser;
+  onClose: () => void;
+  onReset: () => void;
+}) {
+  const update = useUpdateUser();
+  const [form, setForm] = useState({
+    fullName: member.fullName,
+    email: member.email,
+    phone: member.phone ?? '',
+    role: member.role,
+    isActive: member.isActive,
+  });
+
+  const fieldError = (name: string) => fieldErrorOf(update.error, name);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+
+    const patch: Parameters<typeof update.mutateAsync>[0] = { id: member.id };
+    if (form.fullName.trim() !== member.fullName) patch.fullName = form.fullName.trim();
+    if (form.email.trim().toLowerCase() !== member.email) patch.email = form.email.trim();
+    if ((form.phone.trim() || null) !== member.phone) patch.phone = form.phone.trim() || null;
+    if (form.role !== member.role) patch.role = form.role;
+    if (form.isActive !== member.isActive) patch.isActive = form.isActive;
+
+    await update.mutateAsync(patch);
+    onClose();
+  }
+
+  return (
+    <Modal title={`Сотрудник: ${member.fullName}`} onClose={onClose}>
+      <form className="stack" onSubmit={submit}>
+        <Field label="Имя" error={fieldError('fullName')}>
+          <TextInput
+            required
+            value={form.fullName}
+            onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+          />
+        </Field>
+
+        <Field label="Email (логин)" error={fieldError('email')}>
+          <TextInput
+            type="email"
+            required
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+          />
+        </Field>
+
+        <div className="form-row">
+          <Field label="Роль">
+            <select
+              className="input"
+              value={form.role}
+              onChange={(e) => setForm({ ...form, role: e.target.value as Role })}
+            >
+              {ROLES.map((role) => (
+                <option key={role} value={role}>
+                  {ROLE_LABELS[role]}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Телефон" error={fieldError('phone')}>
+            <TextInput
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            />
+          </Field>
+        </div>
+
+        <div className="faint" style={{ fontSize: 12 }}>
+          {ROLE_HINTS[form.role]}
+        </div>
+
+        <label className="row" style={{ gap: 8, cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={form.isActive}
+            onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
+          />
+          <span>
+            Доступ включён
+            {!form.isActive && (
+              <span className="faint"> — сотрудник не сможет войти, сеансы закроются</span>
+            )}
+          </span>
+        </label>
+
+        <ErrorBox error={update.error} />
+
+        <div className="row" style={{ marginTop: 4 }}>
+          <button type="submit" className="btn-primary" disabled={update.isPending}>
+            {update.isPending ? 'Сохранение…' : 'Сохранить'}
+          </button>
+          <button type="button" className="head-chip" onClick={onClose}>
+            Отмена
+          </button>
+          <div className="grow" />
+          <button type="button" className="btn-outline" onClick={onReset}>
+            Сбросить пароль
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+/** Правка собственного профиля: имя, логин, телефон. Роль и доступ себе не меняем. */
+function EditSelfModal({ member, onClose }: { member: CompanyUser; onClose: () => void }) {
+  const update = useUpdateUser();
+  const [form, setForm] = useState({
+    fullName: member.fullName,
+    email: member.email,
+    phone: member.phone ?? '',
+  });
+
+  const fieldError = (name: string) => fieldErrorOf(update.error, name);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+
+    const patch: Parameters<typeof update.mutateAsync>[0] = { id: member.id };
+    if (form.fullName.trim() !== member.fullName) patch.fullName = form.fullName.trim();
+    if (form.email.trim().toLowerCase() !== member.email) patch.email = form.email.trim();
+    if ((form.phone.trim() || null) !== member.phone) patch.phone = form.phone.trim() || null;
+
+    await update.mutateAsync(patch);
+    // Перезагрузка обновит данные в шапке (они берутся из /auth/me). Если
+    // сменили email — сессия закрыта сервером, перезагрузка приведёт на вход.
+    window.location.reload();
+  }
+
+  return (
+    <Modal title="Мои данные" onClose={onClose}>
+      <form className="stack" onSubmit={submit}>
+        <Field label="Имя" error={fieldError('fullName')}>
+          <TextInput
+            required
+            value={form.fullName}
+            onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+          />
+        </Field>
+
+        <Field label="Email (логин)" error={fieldError('email')}>
+          <TextInput
+            type="email"
+            required
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+          />
+          <div className="faint" style={{ fontSize: 12, marginTop: 4 }}>
+            При смене логина вход выполнится заново.
+          </div>
+        </Field>
+
+        <Field label="Телефон" error={fieldError('phone')}>
+          <TextInput
+            value={form.phone}
+            onChange={(e) => setForm({ ...form, phone: e.target.value })}
+          />
+        </Field>
+
+        <ErrorBox error={update.error} />
+
+        <div className="row" style={{ marginTop: 4 }}>
+          <button type="submit" className="btn-primary" disabled={update.isPending}>
+            {update.isPending ? 'Сохранение…' : 'Сохранить'}
+          </button>
+          <button type="button" className="head-chip" onClick={onClose}>
+            Отмена
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
+
+/** Смена собственного пароля: нужен текущий. После успеха — вход заново. */
+function ChangeOwnPasswordModal({ onClose }: { onClose: () => void }) {
+  const change = useChangeOwnPassword();
+  const { logout } = useAuth();
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    await change.mutateAsync({ currentPassword, newPassword });
+    // Сервер закрыл все сессии, включая текущую — уводим на вход.
+    await logout();
+  }
+
+  const fieldError = (name: string) => fieldErrorOf(change.error, name);
+
+  return (
+    <Modal title="Смена пароля" onClose={onClose}>
+      <form className="stack" onSubmit={submit}>
+        <Field label="Текущий пароль" error={fieldError('currentPassword')}>
+          <TextInput
+            type="password"
+            required
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+          />
+        </Field>
+
+        <Field label="Новый пароль (не короче 12 символов)" error={fieldError('newPassword')}>
+          <div className="row" style={{ gap: 8 }}>
+            <TextInput
+              type="text"
+              required
+              minLength={12}
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+            />
+            <button
+              type="button"
+              className="head-chip nowrap"
+              onClick={() => setNewPassword(generatePassword())}
+            >
+              Сгенерировать
+            </button>
+          </div>
+        </Field>
+
+        <div className="faint" style={{ fontSize: 12 }}>
+          После смены пароля потребуется войти заново.
+        </div>
+
+        <ErrorBox error={change.error} />
+
+        <div className="row" style={{ marginTop: 4 }}>
+          <button type="submit" className="btn-primary" disabled={change.isPending}>
+            {change.isPending ? 'Сохранение…' : 'Сменить пароль'}
+          </button>
+          <button type="button" className="head-chip" onClick={onClose}>
+            Отмена
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
 
 function ResetPasswordModal({
   member,

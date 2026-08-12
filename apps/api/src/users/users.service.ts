@@ -65,7 +65,7 @@ export class UsersService {
     companyId: string,
     actorId: string,
     id: string,
-    patch: { fullName?: string; phone?: string | null; role?: Role; isActive?: boolean },
+    patch: { fullName?: string; email?: string; phone?: string | null; role?: Role; isActive?: boolean },
   ) {
     const user = await this.prisma.user.findFirst({ where: { id, companyId } });
     if (!user) throw new NotFoundException('Пользователь не найден');
@@ -80,15 +80,26 @@ export class UsersService {
       await this.assertNotLastAdmin(companyId, id);
     }
 
+    // Смена email — это смена логина. Проверяем, что он свободен (email
+    // уникален глобально), и не раскрываем, в какой компании он занят.
+    const emailChanged = patch.email !== undefined && patch.email !== user.email;
+    if (emailChanged) {
+      const taken = await this.prisma.user.findUnique({
+        where: { email: patch.email! },
+        select: { id: true },
+      });
+      if (taken) throw new ConflictException('Пользователь с таким email уже существует');
+    }
+
     const updated = await this.prisma.user.update({
       where: { id },
       data: patch,
       select: PUBLIC_FIELDS,
     });
 
-    // Отключённый или пониженный в правах сотрудник теряет доступ немедленно,
-    // а не когда истечёт его сессия.
-    if (patch.isActive === false || patch.role !== undefined) {
+    // Отключённый, пониженный в правах или сменивший логин сотрудник теряет
+    // доступ немедленно, а не когда истечёт его сессия.
+    if (patch.isActive === false || patch.role !== undefined || emailChanged) {
       await this.sessions.revokeAllForUser(id);
     }
 

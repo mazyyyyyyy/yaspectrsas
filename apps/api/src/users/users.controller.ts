@@ -1,6 +1,6 @@
 import { Body, Controller, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post } from '@nestjs/common';
 import { Role } from '@prisma/client';
-import { createUserSchema, zPassword, type CreateUserInput } from '@yaspectr/core';
+import { createUserSchema, zEmail, zPassword, type CreateUserInput } from '@yaspectr/core';
 import { z } from 'zod';
 import { CompanyId, CurrentUser, RequirePermissions } from '../common/decorators.js';
 import { zodBody } from '../common/zod-validation.pipe.js';
@@ -9,6 +9,7 @@ import { UsersService } from './users.service.js';
 const userPatchSchema = z
   .object({
     fullName: z.string().trim().min(1).max(200).optional(),
+    email: zEmail.optional(),
     phone: z.string().trim().max(20).nullable().optional(),
     role: z.nativeEnum(Role).optional(),
     isActive: z.boolean().optional(),
