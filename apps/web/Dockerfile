@@ -25,4 +25,9 @@ RUN npm run build --workspace @yaspectr/core \
 FROM nginx:1.27-alpine AS runtime
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/apps/web/dist /usr/share/nginx/html
+# Воркеры nginx работают под пользователем nginx (не root). Часть файлов из
+# public/ могла прийти с правами, при которых чтение запрещено — тогда nginx
+# отдаёт 403 (типично для logo.png после распаковки архива). Делаем всю
+# статику гарантированно читаемой: файлы — на чтение всем, каталоги — +x.
+RUN chmod -R a+rX /usr/share/nginx/html
 EXPOSE 80
