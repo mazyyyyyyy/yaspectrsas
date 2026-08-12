@@ -75,7 +75,16 @@ export class PdfService implements OnModuleDestroy {
       .launch({
         executablePath: this.resolveExecutable(),
         headless: true,
-        args: ['--disable-gpu', '--disable-dev-shm-usage'],
+        // --no-sandbox обязателен в контейнере: процесс идёт под root, а
+        // Chromium под root со включённой песочницей запускаться отказывается.
+        // Риск приемлем — страница печатается с выключенным JS и заблокированной
+        // сетью (см. render), то есть недоверенному коду негде исполниться.
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-gpu',
+          '--disable-dev-shm-usage',
+        ],
       })
       .then((browser) => {
         this.browser = browser;
