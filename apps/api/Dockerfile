@@ -36,7 +36,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
 
 ENV CHROMIUM_PATH=/usr/bin/chromium \
-    PUPPETEER_SKIP_DOWNLOAD=true
+    PUPPETEER_SKIP_DOWNLOAD=true \
+    CHECKPOINT_DISABLE=1
 
 # node_modules целиком (с prisma CLI и tsx — нужны entrypoint'у для migrate/seed),
 # собранный код и схема БД.
@@ -46,6 +47,12 @@ COPY --from=build /app/packages/core ./packages/core
 COPY --from=build /app/apps/api/package.json ./apps/api/package.json
 COPY --from=build /app/apps/api/dist ./apps/api/dist
 COPY --from=build /app/apps/api/prisma ./apps/api/prisma
+
+# Раскладываем Prisma Client с движком заново — уже в рантайм-образе, из
+# бинарника в @prisma/engines (офлайн, без обращения в интернет). Так native
+# query engine гарантированно оказывается в node_modules/.prisma/client того
+# самого образа, что запускается, а не теряется при копировании между стадиями.
+RUN npx prisma generate --schema apps/api/prisma/schema.prisma
 
 COPY apps/api/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
